@@ -57,6 +57,32 @@ def unique_colors(im):
     return len(Counter(im.getdata()))
 
 
+def max_chroma(im, step=2):
+    """Largest (max-min) channel spread found. Brand colours are gray/black
+    (chroma 0); the ChatGPT bloom is mint (green dominant)."""
+    w, h = im.size
+    px = im.load()
+    worst = 0
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            r, g, b = px[x, y]
+            worst = max(worst, max(r, g, b) - min(r, g, b))
+    return worst
+
+
+def mint_pixels(im, step=2):
+    """Lit pixels where green clearly dominates -> the ChatGPT bloom."""
+    w, h = im.size
+    px = im.load()
+    n = 0
+    for y in range(0, h, step):
+        for x in range(0, w, step):
+            r, g, b = px[x, y]
+            if r + g + b > 120 and g > r + 20 and g >= b:
+                n += 1
+    return n
+
+
 def ok(msg):
     print(f"  PASS  {msg}")
 
@@ -71,7 +97,10 @@ im = check("oc45", OUT / "still_oc_045.png")
 if im:
     n, _ = light_pixels(im)
     (ok if n > 20000 else bad)(f"f45 the o is visible ({n} lit samples)")
-    (ok if unique_colors(im) <= 4 else bad)(f"f45 flat brand colours only ({unique_colors(im)} colours)")
+    # brand colours are achromatic gray on black; edge antialiasing adds a few
+    # intermediate tones, so assert the HUE is neutral rather than a colour count
+    c = max_chroma(im)
+    (ok if c <= 8 else bad)(f"f45 only gray/black pixels, no stray hue (chroma {c})")
 
 im = check("oc170", OUT / "still_oc_170.png")
 if im:
@@ -97,14 +126,17 @@ print("ChatGPTIntro")
 im = check("cg100", OUT / "still_cg_100.png")
 base = None
 if im:
-    n, _ = light_pixels(im)
-    base = n
-    (ok if n > 100000 else bad)(f"f100 bloom grown and centred ({n} lit samples)")
+    m = mint_pixels(im)
+    base = m
+    # the bloom is thin-armed, so ~49k sampled mint pixels at full size
+    (ok if m > 20000 else bad)(f"f100 bloom grown and centred ({m} mint samples)")
 
 im = check("cg430", OUT / "still_cg_430.png")
 if im and base is not None:
-    n, _ = light_pixels(im)
-    (ok if n < base else bad)(f"f430 petals have left the frame ({n} < {base})")
+    m = mint_pixels(im)
+    (ok if m < base else bad)(f"f430 petals have left the frame ({m} < {base})")
+    c = max_chroma(im)
+    (ok if c >= 20 else bad)(f"f430 what is left is still mint, not a stray colour (chroma {c})")
 
 im = check("cg599", OUT / "still_cg_599.png")
 if im:

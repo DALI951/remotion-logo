@@ -30,14 +30,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
-      - name: Render OpenCodeIntro (2560x1440 @60fps, 480f)
-        run: npx remotion render OpenCodeIntro out/OpenCodeIntro.mp4 --log=info
-
-      - name: Render ChatGPTIntro (2560x1440 @60fps, 600f)
-        run: npx remotion render ChatGPTIntro out/ChatGPTIntro.mp4 --log=info
-
-      # Cheap single frames (no ffmpeg needed) so the pixel asserts in the
-      # original build survive as an automated gate.
+      # Cheap single frames first (no ffmpeg needed) so the pixel asserts gate
+      # the expensive encode: a geometry regression fails in ~40s, not 4min.
       - name: Render verification stills
         run: |
           npx remotion still OpenCodeIntro out/still_oc_045.png --frame=45
@@ -52,6 +46,12 @@ jobs:
         run: |
           python3 -m pip install --break-system-packages --quiet pillow
           python3 tools/verify_frames.py
+
+      - name: Render OpenCodeIntro (2560x1440 @60fps, 480f)
+        run: npx remotion render OpenCodeIntro out/OpenCodeIntro.mp4 --log=info
+
+      - name: Render ChatGPTIntro (2560x1440 @60fps, 600f)
+        run: npx remotion render ChatGPTIntro out/ChatGPTIntro.mp4 --log=info
 
       - name: Sizes
         run: ls -lh out/
