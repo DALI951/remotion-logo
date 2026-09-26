@@ -1,0 +1,82 @@
+name: render
+
+# Every push renders both animations on GitHub's runner — the local PC never
+# installs Remotion's Chrome or encodes a video.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      composition:
+        description: 'Composition to render (blank = both)'
+        required: false
+        default: ''
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to attach the mp4s to a release
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Render OpenCodeIntro (2560x1440 @60fps, 480f)
+        run: npx remotion render OpenCodeIntro out/OpenCodeIntro.mp4 --log=info
+
+      - name: Render ChatGPTIntro (2560x1440 @60fps, 600f)
+        run: npx remotion render ChatGPTIntro out/ChatGPTIntro.mp4 --log=info
+
+      # Cheap single frames (no ffmpeg needed) so the pixel asserts in the
+      # original build survive as an automated gate.
+      - name: Render verification stills
+        run: |
+          npx remotion still OpenCodeIntro out/still_oc_045.png --frame=45
+          npx remotion still OpenCodeIntro out/still_oc_170.png --frame=170
+          npx remotion still OpenCodeIntro out/still_oc_295.png --frame=295
+          npx remotion still OpenCodeIntro out/still_oc_470.png --frame=470
+          npx remotion still ChatGPTIntro out/still_cg_100.png --frame=100
+          npx remotion still ChatGPTIntro out/still_cg_430.png --frame=430
+          npx remotion still ChatGPTIntro out/still_cg_599.png --frame=599
+
+      - name: Pixel-assert key frames
+        run: |
+          python3 -m pip install --break-system-packages --quiet pillow
+          python3 tools/verify_frames.py
+
+      - name: Sizes
+        run: ls -lh out/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: renders
+          path: out/
+          retention-days: 30
+
+      - name: Attach mp4s to a release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: renders-${{ github.run_number }}
+          name: renders ${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: |
+            out/OpenCodeIntro.mp4
+            out/ChatGPTIntro.mp4
+          body: |
+            Rendered by GitHub Actions from `${{ github.sha }}` (${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
+
+            | Composition | Spec | Length |
+            |---|---|---|
+            | OpenCodeIntro | 2560x1440 @ 60fps | 480 frames / 8s |
+            | ChatGPTIntro | 2560x1440 @ 60fps | 600 frames / 10s |
