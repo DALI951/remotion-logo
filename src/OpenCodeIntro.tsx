@@ -72,12 +72,14 @@ export const OpenCodeIntro: React.FC = () => {
         </div>
       </AbsoluteFill>
 
-      {/* phase 2 — wordmark + caret */}
+      {/* phase 2 — wordmark + caret. NB: the svg is one cell WIDER than the grid
+          (GRID_W + 1) because once the last letter is typed the caret sits in
+          column 39, which would be clipped away at exactly 39 cells. */}
       {frame >= 300 && (
         <svg
-          width={gridW}
+          width={gridW + cellW}
           height={gridH}
-          viewBox={`0 0 ${gridW} ${gridH}`}
+          viewBox={`0 0 ${gridW + cellW} ${gridH}`}
           style={{ position: 'absolute', left: gridLeft, top: gridTop }}
         >
           {rects.map((r, i) => (
