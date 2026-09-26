@@ -1,4 +1,4 @@
-// OpenCode logo intro — the FINAL approved spec (v14, 2026-09-16).
+﻿// OpenCode logo intro — the FINAL approved spec (v14, 2026-09-16).
 //
 // 2560x1440 @ 60fps, 480 frames (8s), pure black background.
 //

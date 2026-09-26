@@ -1,4 +1,4 @@
-// ChatGPT bloom intro — approved spec (2026-09-16).
+﻿// ChatGPT bloom intro — approved spec (2026-09-16).
 //
 // 2560x1440 @ 60fps, 600 frames (10s), black background, ChatGPT mint bloom.
 //

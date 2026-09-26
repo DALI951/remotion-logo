@@ -1,4 +1,4 @@
-// OpenCode wordmark geometry: turns the TUI block-pixel grid into positioned
+﻿// OpenCode wordmark geometry: turns the TUI block-pixel grid into positioned
 // SVG rects, and knows which GRID COLUMNS belong to which letter so the typing
 // reveal can go letter-by-letter.
 //
